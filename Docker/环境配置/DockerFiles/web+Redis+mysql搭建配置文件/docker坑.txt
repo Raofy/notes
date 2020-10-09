@@ -1,0 +1,3 @@
+docker不能使用reboot
+docker不能使用wget，需要yum -y install wget
+docker不能使用systemctl

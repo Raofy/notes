@@ -1,0 +1,3 @@
+ENV JAVA_HOME=/usr/local/jdk/jdk1.8.0_251
+ENV PATH=$PATH:/usr/local/jdk/jdk1.8.0_251/bin
+ENV CLASSPATH=.:/usr/local/jdk/jdk1.8.0_251/lib/dt.jar:/usr/local/jdk/jdk1.8.0_251/lib/tools.jar

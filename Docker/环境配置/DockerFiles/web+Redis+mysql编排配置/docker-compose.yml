@@ -1,0 +1,59 @@
+version : '3.7'
+networks:
+  credit-facility-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 168.18.0.0/24
+services:
+
+  spider-server-datafilteration:
+    container_name: spider-server-datafilteration-1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile-datafilter
+    ports:
+      - 5000:5000
+    depends_on:
+      - redis
+      - mysql
+    links:
+      - "redis:redis"
+      - "mysql:mysql"
+    networks:
+      credit-facility-net:
+        ipv4_address: 168.18.0.5
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: myRedis
+    command: redis-server /etc/redis
+    ports:
+      - "6379:6379"
+    networks:
+      credit-facility-net:
+        ipv4_address: 168.18.0.10
+    volumes:
+      - ./data:/data
+      - ./redis.conf/redis.conf:/etc/redis
+#    restart: always
+
+
+
+  mysql:
+    container_name: mysql
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
+    command: --init-file /data/application/init.sql
+    volumes:
+      - ./init.sql:/data/application/init.sql
+    environment:
+      MYSQL_DATABASE: datafilter
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_HOST: '%'
+    networks:
+      credit-facility-net:
+        ipv4_address: 168.18.0.15
+#    restart: always

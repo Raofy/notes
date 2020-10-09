@@ -1,0 +1,3 @@
+登录：docker login http://115.29.215.82:8000/ -u 15986941493 -p Jin10123
+Tag：docker tag spider-server-datafiltration:1.1 115.29.215.82:8000/spider/data-deduplication:1.1
+push：docker push 115.29.215.82:8000/spider/data-deduplication:1.1
