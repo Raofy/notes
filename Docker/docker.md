@@ -645,6 +645,372 @@
   
   ![](./images/Docker镜像分层-docker路由.png)
   
+  
+- 自定义网络
+
+   说明：有的时候，我们不需要docker0这个默认的路由器，需要自己手动去创建一个网络。
+   
+   - 自定义网络
+   
+   ```shell script
+   [root@VM-0-15-centos ~]# docker network create --driver bridge --subnet 192.168.0.0/16 --gateway 192.168.0.1 mynet  # 创建自定义网络
+   dd8a1fa9b621497b0bb47dbfe8c6a648591212b9810aeef8440de0deba580428
+   [root@VM-0-15-centos ~]# docker ps -a
+   CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+   dd639c4846d3        centos:latest       "/bin/bash"         23 hours ago        Up 23 hours                             clever_gates
+   5daef9f790d8        mycentos:1.0        "/bin/bash"         9 days ago          Up 9 days                               nice_ritchie
+   [root@VM-0-15-centos ~]# docker network ls 
+   NETWORK ID          NAME                DRIVER              SCOPE
+   4c57df8beba0        bridge              bridge              local
+   ca50ef5bed38        host                host                local
+   dd8a1fa9b621        mynet               bridge              local
+   5af36bd9bdfb        none                null                local
+   [root@VM-0-15-centos ~]# docker network inspect mynet   # 查看mynet的详细信息
+   [
+       {
+           "Name": "mynet",
+           "Id": "dd8a1fa9b621497b0bb47dbfe8c6a648591212b9810aeef8440de0deba580428",
+           "Created": "2020-10-10T09:15:51.536077032+08:00",
+           "Scope": "local",
+           "Driver": "bridge",
+           "EnableIPv6": false,
+           "IPAM": {
+               "Driver": "default",
+               "Options": {},
+               "Config": [
+                   {
+                       "Subnet": "192.168.0.0/16",
+                       "Gateway": "192.168.0.1"
+                   }
+               ]
+           },
+           "Internal": false,
+           "Attachable": false,
+           "Ingress": false,
+           "ConfigFrom": {
+               "Network": ""
+           },
+           "ConfigOnly": false,
+           "Containers": {},
+           "Options": {},
+           "Labels": {}
+       }
+   ]
+  ```
+  
+  - 启动容器接入mynet网段中
+  
+  ```shell script
+  [root@VM-0-15-centos ~]# docker images
+  REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+  mytomcat            0.1                 02a02581fe11        7 seconds ago       640MB
+  mycentos            1.0                 d9d535d67f5c        10 days ago         215MB
+  ruibaby/halo        latest              b3f0e81bbe82        2 weeks ago         450MB
+  elasticsearch       7.9.2               caa7a21ca06e        2 weeks ago         763MB
+  redis               6.0.8               84c5f6e03bf0        4 weeks ago         104MB
+  redis               latest              84c5f6e03bf0        4 weeks ago         104MB
+  centos              latest              0d120b6ccaa8        2 months ago        215MB
+  [root@VM-0-15-centos ~]# docker ps -a
+  CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+  [root@VM-0-15-centos ~]# docker run -d -P --name tomcat-net-01 --net mynet mytomcat:0.1
+  8e14c0c779bbf221c4aae5249ebe3b593de8938eb6141e65dbbd2ceeb5084cfc
+  [root@VM-0-15-centos ~]# docker ps -a
+  CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                     NAMES
+  8e14c0c779bb        mytomcat:0.1        "/bin/sh -c '/usr/lo…"   4 seconds ago       Up 4 seconds        0.0.0.0:32768->8080/tcp   tomcat-net-01
+  [root@VM-0-15-centos ~]# docker run -d -P --name tomcat-net-02 --net mynet mytomcat:0.1
+  2a1ae678d3161e419fc1c1cfea341cf8c4e638f3270f035576ad639979cb8b9e
+  [root@VM-0-15-centos ~]# docker network inspect mynet
+  [
+      {
+          "Name": "mynet",
+          "Id": "dd8a1fa9b621497b0bb47dbfe8c6a648591212b9810aeef8440de0deba580428",
+          "Created": "2020-10-10T09:15:51.536077032+08:00",
+          "Scope": "local",
+          "Driver": "bridge",
+          "EnableIPv6": false,
+          "IPAM": {
+              "Driver": "default",
+              "Options": {},
+              "Config": [
+                  {
+                      "Subnet": "192.168.0.0/16",
+                      "Gateway": "192.168.0.1"
+                  }
+              ]
+          },
+          "Internal": false,
+          "Attachable": false,
+          "Ingress": false,
+          "ConfigFrom": {
+              "Network": ""
+          },
+          "ConfigOnly": false,
+          "Containers": {
+              "2a1ae678d3161e419fc1c1cfea341cf8c4e638f3270f035576ad639979cb8b9e": {
+                  "Name": "tomcat-net-02",
+                  "EndpointID": "fa481011d39dfbaa4210ff744b5158c23ac7eae9d5333cb7944fa38ea57c719a",
+                  "MacAddress": "02:42:c0:a8:00:03",
+                  "IPv4Address": "192.168.0.3/16",
+                  "IPv6Address": ""
+              },
+              "8e14c0c779bbf221c4aae5249ebe3b593de8938eb6141e65dbbd2ceeb5084cfc": {
+                  "Name": "tomcat-net-01",
+                  "EndpointID": "9952ff29ef87e4146d94614968f6e5f7dc428d550a018c32e5c84878ffd90563",
+                  "MacAddress": "02:42:c0:a8:00:02",
+                  "IPv4Address": "192.168.0.2/16",
+                  "IPv6Address": ""
+              }
+          },
+          "Options": {},
+          "Labels": {}
+      }
+  ]
+  [root@VM-0-15-centos ~]# 
+  ```
+  
+  - 容器之间进行ping和物理机进行ping
+  
+  ```shell script
+  [root@VM-0-15-centos ~]# docker exec tomcat-net-02 ping tomcat-net-01
+  PING tomcat-net-01 (192.168.0.2) 56(84) bytes of data.
+  64 bytes from tomcat-net-01.mynet (192.168.0.2): icmp_seq=1 ttl=64 time=0.062 ms
+  64 bytes from tomcat-net-01.mynet (192.168.0.2): icmp_seq=2 ttl=64 time=0.054 ms
+  64 bytes from tomcat-net-01.mynet (192.168.0.2): icmp_seq=3 ttl=64 time=0.056 ms
+  64 bytes from tomcat-net-01.mynet (192.168.0.2): icmp_seq=4 ttl=64 time=0.059 ms
+  64 bytes from tomcat-net-01.mynet (192.168.0.2): icmp_seq=5 ttl=64 time=0.039 ms
+  ^C
+  [root@VM-0-15-centos ~]# docker exec tomcat-net-01 ping tomcat-net-02
+  PING tomcat-net-02 (192.168.0.3) 56(84) bytes of data.
+  64 bytes from tomcat-net-02.mynet (192.168.0.3): icmp_seq=1 ttl=64 time=0.049 ms
+  64 bytes from tomcat-net-02.mynet (192.168.0.3): icmp_seq=2 ttl=64 time=0.057 ms
+  64 bytes from tomcat-net-02.mynet (192.168.0.3): icmp_seq=3 ttl=64 time=0.057 ms
+  64 bytes from tomcat-net-02.mynet (192.168.0.3): icmp_seq=4 ttl=64 time=0.063 ms
+  ^C
+  [root@VM-0-15-centos ~]# ping 192.168.0.2
+  PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+  64 bytes from 192.168.0.2: icmp_seq=1 ttl=64 time=0.092 ms
+  64 bytes from 192.168.0.2: icmp_seq=2 ttl=64 time=0.053 ms
+  64 bytes from 192.168.0.2: icmp_seq=3 ttl=64 time=0.052 ms
+  ^C
+  --- 192.168.0.2 ping statistics ---
+  3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+  rtt min/avg/max/mdev = 0.052/0.065/0.092/0.020 ms
+  [root@VM-0-15-centos ~]# 
+  ```
+  
+  - 报错总结
+  
+  ```text
+  Docker容器启动报WARNING: IPv4 forwarding is disabled. Networking will not work
+  
+  # 解决方案
+  # vi /etc/sysctl.conf
+  或者
+  # vi /usr/lib/sysctl.d/00-system.conf
+  
+  添加如下内容：
+  net.ipv4.ip_forward = 1
+  
+  重启network服务
+  # systemctl restart network
+  
+  查看是否修改成功
+  # sysctl net.ipv4.ip_forward
+  
+  如果返回为“net.ipv4.ip_forward = 1”则表示成功了
+  
+  找到刚刚启动的容器
+  # docker ps -a
+  
+  删除刚启动的容器
+  # docker rm '你刚要启动的容器名称'
+  
+  ```
+  
+  
+- 网络连通
+
+   说明：上面阐述的是同一个网段下，两个容器之间进行通信，例如一个Redis集群中主从机器进行通信或者说是其他Redis主机间进行通信
+   但是，有的时候，我们需要两个集群间进行通信，也就是两个处于不同网段的两个服务进行通信，此时docker也提供了支持
+   
+   - 相关命令
+   
+   ```shell script
+  [root@VM-0-15-centos ~]# docker network --help
+      
+      Usage:  docker network COMMAND
+      
+      Manage networks
+      
+      Commands:
+        connect     Connect a container to a network  # 将一个容器连接到一个网络
+        create      Create a network
+        disconnect  Disconnect a container from a network
+        inspect     Display detailed information on one or more networks
+        ls          List networks
+        prune       Remove all unused networks
+        rm          Remove one or more networks
+      
+      Run 'docker network COMMAND --help' for more information on a command.
+  [root@VM-0-15-centos ~]# docker network connect --help
+  
+  Usage:  docker network connect [OPTIONS] NETWORK CONTAINER
+  
+  Connect a container to a network
+  
+  Options:
+        --alias strings           Add network-scoped alias for the container
+        --driver-opt strings      driver options for the network
+        --ip string               IPv4 address (e.g., 172.30.100.104)
+        --ip6 string              IPv6 address (e.g., 2001:db8::33)
+        --link list               Add link to another container
+        --link-local-ip strings   Add a link-local address for the container
+  [root@VM-0-15-centos ~]#
+   ```
+  
+  - 启动一个不同网段的tomcat-net-03，并测试ping
+  
+  ```shell script
+  [root@VM-0-15-centos ~]# docker run -d -P --name tomcat-net-03 --net bridge mytomcat:0.1
+  c015da6c509811cdc2950d101b73abf43d2e95abb3f9d92c107221a825e699e6
+  [root@VM-0-15-centos ~]# docker ps -a
+  CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                     NAMES
+  c015da6c5098        mytomcat:0.1        "/bin/sh -c '/usr/lo…"   6 seconds ago       Up 5 seconds        0.0.0.0:32770->8080/tcp   tomcat-net-03
+  2a1ae678d316        mytomcat:0.1        "/bin/sh -c '/usr/lo…"   20 minutes ago      Up 20 minutes       0.0.0.0:32769->8080/tcp   tomcat-net-02
+  8e14c0c779bb        mytomcat:0.1        "/bin/sh -c '/usr/lo…"   21 minutes ago      Up 21 minutes       0.0.0.0:32768->8080/tcp   tomcat-net-01
+  [root@VM-0-15-centos ~]# docker exec tomcat-net-01 ping tomcat-net-03
+  ping: tomcat-net-03: Name or service not known
+  [root@VM-0-15-centos ~]# docker network inspect bridge
+  [
+      {
+          "Name": "bridge",
+          "Id": "4c57df8beba07c6e212aa422d38eaf0e00aa4cf6996744f9c754f54b1921856e",
+          "Created": "2020-09-29T15:35:53.674846001+08:00",
+          "Scope": "local",
+          "Driver": "bridge",
+          "EnableIPv6": false,
+          "IPAM": {
+              "Driver": "default",
+              "Options": null,
+              "Config": [
+                  {
+                      "Subnet": "172.18.0.0/16"
+                  }
+              ]
+          },
+          "Internal": false,
+          "Attachable": false,
+          "Ingress": false,
+          "ConfigFrom": {
+              "Network": ""
+          },
+          "ConfigOnly": false,
+          "Containers": {
+              "c015da6c509811cdc2950d101b73abf43d2e95abb3f9d92c107221a825e699e6": {
+                  "Name": "tomcat-net-03",
+                  "EndpointID": "17ecff7cd06f05228d514a1214a1b70db77ae218c15615a081be73fb6436e260",
+                  "MacAddress": "02:42:ac:12:00:02",
+                  "IPv4Address": "172.18.0.2/16",
+                  "IPv6Address": ""
+              }
+          },
+          "Options": {
+              "com.docker.network.bridge.default_bridge": "true",
+              "com.docker.network.bridge.enable_icc": "true",
+              "com.docker.network.bridge.enable_ip_masquerade": "true",
+              "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+              "com.docker.network.bridge.name": "docker0",
+              "com.docker.network.driver.mtu": "1500"
+          },
+          "Labels": {}
+      }
+  ]
+  ```
+  - 将tomcat-net-03加入192.168.0.1网段并测试
+  
+  ```shell script
+  [root@VM-0-15-centos ~]# docker network connect mynet tomcat-net-03 
+  [root@VM-0-15-centos ~]# docker exec tomcat-net-01 ping tomcat-net-03
+  PING tomcat-net-03 (192.168.0.4) 56(84) bytes of data.
+  64 bytes from tomcat-net-03.mynet (192.168.0.4): icmp_seq=1 ttl=64 time=0.067 ms
+  64 bytes from tomcat-net-03.mynet (192.168.0.4): icmp_seq=2 ttl=64 time=0.056 ms
+  64 bytes from tomcat-net-03.mynet (192.168.0.4): icmp_seq=3 ttl=64 time=0.062 ms
+  64 bytes from tomcat-net-03.mynet (192.168.0.4): icmp_seq=4 ttl=64 time=0.062 ms
+  
+  [root@VM-0-15-centos ~]# docker network inspect mynet
+  [
+      {
+          "Name": "mynet",
+          "Id": "dd8a1fa9b621497b0bb47dbfe8c6a648591212b9810aeef8440de0deba580428",
+          "Created": "2020-10-10T09:15:51.536077032+08:00",
+          "Scope": "local",
+          "Driver": "bridge",
+          "EnableIPv6": false,
+          "IPAM": {
+              "Driver": "default",
+              "Options": {},
+              "Config": [
+                  {
+                      "Subnet": "192.168.0.0/16",
+                      "Gateway": "192.168.0.1"
+                  }
+              ]
+          },
+          "Internal": false,
+          "Attachable": false,
+          "Ingress": false,
+          "ConfigFrom": {
+              "Network": ""
+          },
+          "ConfigOnly": false,
+          "Containers": {
+              "2a1ae678d3161e419fc1c1cfea341cf8c4e638f3270f035576ad639979cb8b9e": {
+                  "Name": "tomcat-net-02",
+                  "EndpointID": "fa481011d39dfbaa4210ff744b5158c23ac7eae9d5333cb7944fa38ea57c719a",
+                  "MacAddress": "02:42:c0:a8:00:03",
+                  "IPv4Address": "192.168.0.3/16",
+                  "IPv6Address": ""
+              },
+              "8e14c0c779bbf221c4aae5249ebe3b593de8938eb6141e65dbbd2ceeb5084cfc": {
+                  "Name": "tomcat-net-01",
+                  "EndpointID": "9952ff29ef87e4146d94614968f6e5f7dc428d550a018c32e5c84878ffd90563",
+                  "MacAddress": "02:42:c0:a8:00:02",
+                  "IPv4Address": "192.168.0.2/16",
+                  "IPv6Address": ""
+              },
+              "c015da6c509811cdc2950d101b73abf43d2e95abb3f9d92c107221a825e699e6": {
+                  "Name": "tomcat-net-03",
+                  "EndpointID": "e85c5127b0e53f25c7c3004250ae90da45a8a31a51a0de67c1c462085120fb8c",
+                  "MacAddress": "02:42:c0:a8:00:04",
+                  "IPv4Address": "192.168.0.4/16",
+                  "IPv6Address": ""
+              }
+          },
+          "Options": {},
+          "Labels": {}
+      }
+  ]
+  [root@VM-0-15-centos ~]# 
+
+  ```
+  
+  - 实现本质
+  
+  ![](./images/Docker镜像分层-docker网络连通.png)
+  
+  - 结论
+  
+    假设要跨网络操作别人，就需要使用docker network connect 连通！
+  
+  
+  
+  
+  
+  
+  
+   
+
+  
 
 
    
