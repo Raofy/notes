@@ -7,7 +7,19 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="notes" />
+        <module name="agency-model" />
+        <module name="singleton-mode" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="design-patterns" target="1.8" />
+      <module name="shejimoshi" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="agency-model" options="-parameters" />
+      <module name="singleton-mode" options="-parameters" />
+    </option>
   </component>
 </project>
