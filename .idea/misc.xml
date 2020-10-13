@@ -7,9 +7,9 @@
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/singleton-mode/pom.xml" />
         <option value="$PROJECT_DIR$/agency-model/pom.xml" />
-        <option value="$PROJECT_DIR$/prototype-mode/pom.xml" />
         <option value="$PROJECT_DIR$/factory-mode/pom.xml" />
         <option value="$PROJECT_DIR$/builder-mode/pom.xml" />
+        <option value="$PROJECT_DIR$/adapter-mode/pom.xml" />
       </list>
     </option>
   </component>

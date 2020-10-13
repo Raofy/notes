@@ -1,10 +1,10 @@
-package com.ryan.prototypemode;
+package com.ryan.adaptermode;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class PrototypeModeApplicationTests {
+class AdapterModeApplicationTests {
 
     @Test
     void contextLoads() {

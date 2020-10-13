@@ -1,13 +1,13 @@
-package com.ryan.prototypemode;
+package com.ryan.adaptermode;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PrototypeModeApplication {
+public class AdapterModeApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PrototypeModeApplication.class, args);
+        SpringApplication.run(AdapterModeApplication.class, args);
     }
 
 }

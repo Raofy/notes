@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.Ryan</groupId>
-    <artifactId>prototype-mode</artifactId>
+    <artifactId>adapter-mode</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>prototype-mode</name>
+    <name>adapter-mode</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
